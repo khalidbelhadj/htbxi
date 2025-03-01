@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import WorkLocation from "@/components/work-location";
 import { LngLat } from "@/types";
 import CommutePopover from "@/components/commute-popover";
+import RentPopover from "@/components/rent-popover";
 
 export default function Home() {
   const [commuteTime, setCommuteTime] = useState(30);
@@ -21,6 +22,10 @@ export default function Home() {
 
   const handleTransportModeChange = (mode: "walk" | "drive" | "public") => {
     setTransportMode(mode);
+  };
+
+  const handleRentChange = (value: number) => {
+    setRent(value as 1 | 2 | 3);
   };
 
   const [workLocation, setWorkLocation] = useState<LngLat | null>(null);
@@ -38,6 +43,7 @@ export default function Home() {
 
     // Initialize map
     mapRef.current = new mapboxgl.Map({
+      accessToken: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v9",
       center: [-0.14213677752282086, 51.50448489745423],
@@ -52,10 +58,10 @@ export default function Home() {
       if (!mapRef.current) return;
 
       // Add source for the polygon
-      mapRef.current.addSource("maine", {
-        type: "geojson",
-        data: mainePolygon,
-      });
+      // mapRef.current.addSource("maine", {
+      //   type: "geojson",
+      //   data: mainePolygon,
+      // });
 
       // Add a layer showing the polygon
       mapRef.current.addLayer({
@@ -82,7 +88,7 @@ export default function Home() {
     if (mapRef.current && workLocation) {
       console.log(workLocation);
       mapRef.current.flyTo({
-        center: [workLocation[0], workLocation[1]],
+        center: [workLocation.lng, workLocation.lat],
       });
     }
   }, [workLocation]);

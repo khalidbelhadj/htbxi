@@ -10,12 +10,6 @@ type Props = {
   setWorkLocation?: (workLocation: LngLat) => void;
 };
 
-type SearchResult = {
-  name: string;
-  place_formatted: string;
-  coordinates: LngLat;
-};
-
 type MapboxSuggestion = {
   name: string;
   place_formatted: string;
@@ -30,7 +24,7 @@ export default function WorkLocation({ setWorkLocation }: Props) {
   const [open, setOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState("");
   const [sessionToken, setSessionToken] = useState("");
-  const [searchResults, setSearchResults] = useState<MapboxSuggestion[]>([]); 
+  const [searchResults, setSearchResults] = useState<MapboxSuggestion[]>([]);
   const [searchValue, setSearchValue] = useState("");
 
   useEffect(() => {
@@ -52,17 +46,20 @@ export default function WorkLocation({ setWorkLocation }: Props) {
           `https://api.mapbox.com/search/searchbox/v1/suggest?q=${encodeURIComponent(
             searchValue
           )}
-          &session_token=${sessionToken}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}&proximity=${londonCoords}
+          &session_token=${sessionToken}&access_token=${
+            process.env.NEXT_PUBLIC_MAPBOX_TOKEN
+          }&proximity=${londonCoords}
           `
-
         );
 
-        const data = await response.json() as MapboxResponse;
-        const suggestions = data.suggestions.map((suggestion: MapboxSuggestion) => ({
-          name: suggestion.name,
-          place_formatted: suggestion.place_formatted,
-          mapbox_id: suggestion.mapbox_id,
-        }));
+        const data = (await response.json()) as MapboxResponse;
+        const suggestions = data.suggestions.map(
+          (suggestion: MapboxSuggestion) => ({
+            name: suggestion.name,
+            place_formatted: suggestion.place_formatted,
+            mapbox_id: suggestion.mapbox_id,
+          })
+        );
 
         setSearchResults(suggestions);
       } catch (error) {
@@ -79,7 +76,7 @@ export default function WorkLocation({ setWorkLocation }: Props) {
     setSearchValue("");
     setOpen(false);
     if (setWorkLocation) {
-      console.log('setting work location', coordinates);
+      console.log("setting work location", coordinates);
       setWorkLocation(coordinates);
     }
   };
@@ -117,7 +114,12 @@ export default function WorkLocation({ setWorkLocation }: Props) {
                   );
                   const data = await response.json();
                   const coordinates = data.features[0].geometry.coordinates;
-                  handleSelect(result.place_formatted, coordinates);
+                  const lngLat = {
+                    lng: coordinates[0],
+                    lat: coordinates[1],
+                  };
+
+                  handleSelect(result.place_formatted, lngLat);
                 }}
               >
                 <div className="flex items-center gap-2">
