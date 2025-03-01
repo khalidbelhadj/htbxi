@@ -1,9 +1,12 @@
 from utils import get_rent_by_district, get_postcodes_by_coordinates
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-
+import logging
 app = Flask(__name__)
 CORS(app)
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -20,49 +23,43 @@ def predict():
             }), 400
             
         # Get nearby postcodes
-        postcodes = get_postcodes_by_coordinates(latitude, longitude)
+        postcodes = get_postcodes_by_coordinates(latitude, longitude, radius=10000)
         
         if not postcodes.get('result'):
             return jsonify({
                 'error': 'No postcodes found for the given coordinates'
             }), 404
-            
-        # Get rent data for the first postcode's district
-        first_postcode = postcodes['result'][0]
-        district = first_postcode['outcode']
         
-        rent_data = get_rent_by_district(district)
+        rent_data = {}
+        # Get rent data for each postcode
+        for postcode in postcodes['result']:
+            district = postcode['outcode']
+            rent = get_rent_by_district(district)
+            rent_data[postcode['outcode']] = rent
+
+        logging.info(f"Rent data: {rent_data}")
         
-        if rent_data is None or rent_data.empty:
+        if rent_data is None or len(rent_data) == 0:
             return jsonify({
                 'error': f'No rent data found for district {district}'
             }), 404
             
         # Extract constraints from request
-        min_rent = data.get('min_rent')
-        max_rent = data.get('max_rent')
+        min_rent = int(data.get('min_rent'))
+        max_rent = int(data.get('max_rent'))
 
         # Filter rent data based on constraints
-        if min_rent is not None:
-            rent_data = rent_data[rent_data['Mean'] >= min_rent]
-        if max_rent is not None:
-            rent_data = rent_data[rent_data['Mean'] <= max_rent]
+        rent_data = {k: v for k, v in rent_data.items() if min_rent <= v <= max_rent}
+        logging.info(f"Filtered rent data: {rent_data}")
 
-        if rent_data.empty:
+        if len(rent_data) == 0:
             return jsonify({
                 'error': 'No rent data found matching the given constraints'
             }), 404
 
-        # get average rent value for each postcode
-        rent_predictions = rent_data.groupby('Postcode')['Mean'].mean().to_dict()
-        
+        # get average rent value for each postcode        
         return jsonify({
-            'district': district,
-            'predictions': rent_predictions,
-            'location': {
-                'latitude': first_postcode.get('latitude'),
-                'longitude': first_postcode.get('longitude')
-            }
+            'predictions': rent_data
         })
         
     except Exception as e:

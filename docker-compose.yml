@@ -6,8 +6,7 @@ services:
       context: ./flask_backend
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"  # Flask REST API
-      - "5001:5001"  # gRPC server
+      - "5000:5000"
     volumes:
       - ./flask_backend:/app
     environment:
@@ -21,8 +20,5 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/app
-      - /app/node_modules
     environment:
       - NODE_ENV=production
-    depends_on:
-      - flask_backend

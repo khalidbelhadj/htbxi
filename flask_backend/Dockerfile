@@ -8,17 +8,11 @@ WORKDIR /app
 COPY . /app
 
 # Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install uv
+RUN uv sync
 
-# Generate the gRPC code
-RUN python generate_proto.py
+# Make port 5000 available to the world outside this container
+EXPOSE 5000
 
-# Make ports available to the world outside this container
-EXPOSE 5000 5001
-
-# Create a script to run both servers
-RUN echo '#!/bin/bash\npython main.py &\npython grpc_server.py' > /app/start.sh
-RUN chmod +x /app/start.sh
-
-# Run the servers when the container launches
-CMD ["/app/start.sh"]
+# Run app.py when the container launches
+CMD ["uv", "run", "main.py"]

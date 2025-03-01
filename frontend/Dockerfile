@@ -4,7 +4,7 @@ FROM node:16-alpine
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy package.json and yarn.lock
+# Copy package.json and package-lock.json
 COPY package.json yarn.lock ./
 
 # Install dependencies
@@ -12,9 +12,6 @@ RUN yarn install
 
 # Copy the rest of the application code
 COPY . .
-
-# Generate the gRPC code
-RUN yarn generate-proto
 
 # Build the application
 RUN yarn build
