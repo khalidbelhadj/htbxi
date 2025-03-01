@@ -27,3 +27,22 @@ def format_list_field(field: list) -> str:
     if not field:
         return "None"
     return ", ".join(field)
+
+def get_district_coords(district: str) -> dict:
+    url = f"https://api.postcodes.io/outcodes/{district}"
+    response = requests.get(url)
+    response.raise_for_status()  # Raise exception for bad status codes
+    try:
+        return response.json()["result"]
+    except:
+        return response.json()["result"][0]
+
+def get_all_districts(districts: list) -> dict:
+    """
+    Get coordinates for all districts in the list
+    """
+    districts = {}
+    for district in districts:
+        districts[district] = get_district_coords(district)
+    return districts
+        

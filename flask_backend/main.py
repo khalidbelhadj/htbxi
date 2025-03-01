@@ -1,12 +1,22 @@
-from utils import get_rent_by_district, get_postcodes_by_coordinates
+from utils import get_rent_by_district, get_postcodes_by_coordinates, get_all_districts, filter_districts_by_distance
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
+import pickle
+import os
 app = Flask(__name__)
 CORS(app)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# pre-load all districts
+if not os.path.exists('districts.pkl'):
+    districts = get_all_districts()
+    pickle.dump(districts, open('districts.pkl', 'wb'))
+else:
+    districts = pickle.load(open('districts.pkl', 'rb'))
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -14,28 +24,28 @@ def predict():
         data = request.get_json()
         
         # Extract coordinates from request
-        latitude = data.get('latitude')
-        longitude = data.get('longitude')
+        workplace_latitude = data.get('workplace_latitude')
+        workplace_longitude = data.get('workplace_longitude')
         
-        if not latitude or not longitude:
+        if not workplace_latitude or not workplace_longitude:
             return jsonify({
                 'error': 'Missing required parameters: latitude and longitude'
             }), 400
-            
-        # Get nearby postcodes
-        postcodes = get_postcodes_by_coordinates(latitude, longitude, radius=10000)
         
-        if not postcodes.get('result'):
+        if not districts:
             return jsonify({
-                'error': 'No postcodes found for the given coordinates'
+                'error': 'District data not found'
             }), 404
+        
+        # filter districts by distance
+        max_travel_time = data.get('max_travel_time')
+        filtered_districts = filter_districts_by_distance(workplace_latitude, workplace_longitude, districts, max_travel_time)
         
         rent_data = {}
         # Get rent data for each postcode
-        for postcode in postcodes['result']:
-            district = postcode['outcode']
+        for district in filtered_districts:
             rent = get_rent_by_district(district)
-            rent_data[postcode['outcode']] = rent
+            rent_data[district] = rent
 
         logging.info(f"Rent data: {rent_data}")
         
