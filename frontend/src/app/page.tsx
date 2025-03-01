@@ -15,12 +15,16 @@ import {
 } from "@/components/ui/popover";
 import { Slider } from "@/components/ui/slider";
 import { Car, Train, FootprintsIcon as Walk } from "lucide-react";
+import WorkLocation from "@/components/work-location";
+import { LngLat } from "@/types";
 
 export default function Home() {
   const [commuteTime, setCommuteTime] = useState(30);
   const [transportMode, setTransportMode] = useState<
     "walk" | "drive" | "public"
   >("drive");
+
+  const [workLocation, setWorkLocation] = useState<LngLat | null>(null);
 
   const formatTime = (minutes: number) => {
     if (minutes < 60) {
@@ -38,11 +42,8 @@ export default function Home() {
     <div className="w-screen h-screen relative">
       <div className="w-full flex items-center justify-center absolute p-5 z-10">
         <div className="bg-background rounded-full flex h-12 items-center ring-ring ring-1 px-5 py-3 gap-5 text-lg">
-          <Input
-            placeholder="Work location..."
-            className="focus-visible:ring-0 focus-within:border-none shadow-none border-none h-full w-[15rem] p-1 !text-lg"
-          />
           <Separator orientation="vertical" />
+          <WorkLocation />
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="w-64 justify-start">
