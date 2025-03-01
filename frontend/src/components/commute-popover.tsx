@@ -35,7 +35,7 @@ export default function CommutePopover({
           <span>Commute: {formatTime(commuteTime)}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80">
+      <PopoverContent className="w-80" align="start">
         <div className="grid gap-4">
           <div className="space-y-2">
             <h4 className="font-medium leading-none">Commute Time</h4>
@@ -43,7 +43,7 @@ export default function CommutePopover({
               Set your maximum acceptable commute time.
             </p>
           </div>
-          <div className="flex justify-center space-x-2">
+          <div className="flex gap-2">
             <Button
               variant={transportMode === "walk" ? "default" : "outline"}
               size="icon"
