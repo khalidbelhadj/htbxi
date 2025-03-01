@@ -1,4 +1,80 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Rent Prediction Frontend
+
+This is the frontend for the Rent Prediction application. It uses Next.js, React, and gRPC-Web to communicate with the backend service.
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
+
+2. Generate TypeScript code from Proto files:
+   ```bash
+   npm run generate-proto
+   # or
+   yarn generate-proto
+   ```
+
+3. Start the development server:
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   ```
+
+## gRPC Integration
+
+The application uses gRPC-Web to communicate with the backend service. The proto file is located at `src/proto/rent_prediction.proto`.
+
+### Using the Rent Prediction Service
+
+You can use the `predictRent` function from `src/actions.ts` to make predictions:
+
+```typescript
+import { predictRent } from "@/actions";
+
+// Example usage
+const predictions = await predictRent({
+  workLocation: { lat: 51.5074, lng: -0.1278 },
+  commuteTimeMinutes: 30,
+  commuteType: "drive",
+  rentOption: 2
+});
+
+// predictions will be an array of RentPrediction objects
+// [
+//   {
+//     district: "SW1",
+//     meanRent: 1500,
+//     medianRent: 1400,
+//     location: {
+//       latitude: 51.5074,
+//       longitude: -0.1278
+//     }
+//   },
+//   ...
+// ]
+```
+
+### Proto Schema
+
+The proto schema defines the following:
+
+- `Location`: A message containing latitude and longitude
+- `PredictionRequest`: The request message containing work location, commute preferences, and rent options
+- `RentPrediction`: A prediction result containing district, rent values, and location
+- `PredictionResponse`: The response message containing an array of predictions and any error messages
+
+## Development
+
+To modify the gRPC service:
+
+1. Edit the proto file at `src/proto/rent_prediction.proto`
+2. Regenerate the TypeScript code using `yarn generate-proto`
+3. Update the `predictRent` function in `src/actions.ts` if necessary
 
 ## Getting Started
 

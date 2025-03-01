@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package rentprediction;
+
+service RentPredictionService {
+  rpc PredictRent (PredictionRequest) returns (PredictionResponse);
+}
+
+message Location {
+  double latitude = 1;
+  double longitude = 2;
+}
+
+message PredictionRequest {
+  // Work location coordinates
+  Location work_location = 1;
+  
+  // Commute preferences
+  int32 commute_time_minutes = 2;
+  string commute_type = 3; // "walk", "drive", or "public"
+  
+  // Rent preferences
+  int32 rent_option = 4; // 1, 2, or 3 (representing different rent options)
+}
+
+message RentPrediction {
+  string district = 1;
+  double mean_rent = 2;
+  double median_rent = 3;
+  Location location = 4;
+}
+
+message PredictionResponse {
+  repeated RentPrediction predictions = 1;
+  string error_message = 2;
+} 

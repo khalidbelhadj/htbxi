@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package myservice;
+
+// service definition
+service MyService {
+  rpc SendMessage (MessageRequest) returns (MessageResponse) {}
+}
+
+// request message
+message MessageRequest {
+  string reqType = 1;
+  string payload = 1;
+}
+
+// response message
+message MessageResponse {
+  string reply = 1;
+}

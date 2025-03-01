@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  flask_backend:
+    build:
+      context: ./flask_backend
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"  # Flask REST API
+      - "5001:5001"  # gRPC server
+    volumes:
+      - ./flask_backend:/app
+    environment:
+      - FLASK_ENV=development
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - flask_backend

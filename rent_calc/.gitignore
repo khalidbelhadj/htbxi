@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+#protobuf generated files
+protos/*_pb2.py
+protos/*_pb2_grpc.py
+
+# Virtual environments
+.venv
+
+
