@@ -6,48 +6,8 @@ import mapboxgl from "mapbox-gl";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import WorkLocation from "@/components/work-location";
+import { LngLat } from "@/types";
 import CommutePopover from "@/components/commute-popover";
-import RentPopover from "@/components/rent-popover";
-
-import "mapbox-gl/dist/mapbox-gl.css";
-
-// Set mapbox access token
-mapboxgl.accessToken =
-  "pk.eyJ1Ijoia2hhbGlkYmVsaGFkaiIsImEiOiJjbTdxZTJuZmowdjNsMmtyM2V4d2MzbGIwIn0.rM356YxasCs7OYPymA-ZDQ";
-
-// Define the GeoJSON data
-const mainePolygon = {
-  type: "Feature" as const,
-  geometry: {
-    type: "Polygon" as const,
-    // These coordinates outline Maine.
-    coordinates: [
-      [
-        [-67.13734, 45.13745],
-        [-66.96466, 44.8097],
-        [-68.03252, 44.3252],
-        [-69.06, 43.98],
-        [-70.11617, 43.68405],
-        [-70.64573, 43.09008],
-        [-70.75102, 43.08003],
-        [-70.79761, 43.21973],
-        [-70.98176, 43.36789],
-        [-70.94416, 43.46633],
-        [-71.08482, 45.30524],
-        [-70.66002, 45.46022],
-        [-70.30495, 45.91479],
-        [-70.00014, 46.69317],
-        [-69.23708, 47.44777],
-        [-68.90478, 47.18479],
-        [-68.2343, 47.35462],
-        [-67.79035, 47.06624],
-        [-67.79141, 45.70258],
-        [-67.13734, 45.13745],
-      ],
-    ],
-  },
-  properties: {},
-};
 
 export default function Home() {
   const [commuteTime, setCommuteTime] = useState(30);
@@ -63,9 +23,13 @@ export default function Home() {
     setTransportMode(mode);
   };
 
-  const handleRentChange = (value: number) => {
-    setRent(value as 1 | 2 | 3);
-  };
+  const [workLocation, setWorkLocation] = useState<LngLat | null>(null);
+
+  useEffect(() => {
+    if (workLocation) {
+      console.log(workLocation);
+    }
+  }, [workLocation]);
 
   useEffect(() => {
     if (mapRef.current) return; // Initialize map only once
@@ -114,11 +78,20 @@ export default function Home() {
     };
   }, []); // Empty dependency array ensures this runs once on mount
 
+  useEffect(() => {
+    if (mapRef.current && workLocation) {
+      console.log(workLocation);
+      mapRef.current.flyTo({
+        center: [workLocation[0], workLocation[1]],
+      });
+    }
+  }, [workLocation]);
+
   return (
     <div className="w-screen h-screen relative">
       <div className="w-full flex items-center justify-center absolute p-5 z-10">
         <div className="bg-background rounded-full flex h-12 items-center ring-ring ring-1 px-5 py-3 gap-5">
-          <WorkLocation />
+          <WorkLocation setWorkLocation={setWorkLocation} />
           <Separator orientation="vertical" />
           <CommutePopover
             commuteTime={commuteTime}
