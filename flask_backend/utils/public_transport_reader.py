@@ -4,8 +4,72 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-def filter_districts_by_distance(workplace_district, workplace_latitude, workplace_longitude, districts, max_travel_time, travel_cache):
+def filter_districts_by_distance(workplace_district, workplace_latitude, workplace_longitude, districts, max_travel_time, travel_cache=None):
+    """
+    Filter districts by travel time from the workplace district.
+    If travel_cache is None, calculate distances on-the-fly using multithreading.
+    """
     filtered_districts = {}
+    
+    # If no cache is provided, use on-the-fly calculation with multithreading
+    if travel_cache is None:
+        logging.info(f"No travel cache provided, calculating distances on-the-fly for workplace district: {workplace_district}")
+        
+        # Rate limiting variables
+        request_timestamps = []
+        requests_per_minute_limit = 499  # To be safe, staying below 500
+        
+        # Create a list of districts to calculate (excluding workplace district)
+        district_calculations = []
+        for district, data in districts.items():
+            if district == workplace_district:
+                # For workplace district, calculate from specified workplace coordinates to district center
+                district_calculations.append((workplace_latitude, workplace_longitude, 
+                                            data['latitude'], data['longitude'], district))
+            else:
+                # For other districts, calculate from workplace district center to this district center
+                district_calculations.append((districts[workplace_district]['latitude'], 
+                                            districts[workplace_district]['longitude'],
+                                            data['latitude'], data['longitude'], district))
+        
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            # Map of futures to districts
+            future_to_district = {}
+            
+            for from_lat, from_lon, to_lat, to_lon, district in district_calculations:
+                # Check rate limiting
+                current_time = time.time()
+                request_timestamps = [t for t in request_timestamps if current_time - t < 60]
+                
+                if len(request_timestamps) >= requests_per_minute_limit:
+                    oldest_timestamp = min(request_timestamps)
+                    sleep_time = 60 - (current_time - oldest_timestamp)
+                    if sleep_time > 0:
+                        logging.info(f"Rate limit approaching, sleeping for {sleep_time:.2f} seconds")
+                        time.sleep(sleep_time)
+                        current_time = time.time()
+                        request_timestamps = []
+                
+                # Add current request timestamp
+                request_timestamps.append(current_time)
+                
+                # Submit job to executor
+                future = executor.submit(get_journey, from_lat, from_lon, to_lat, to_lon)
+                future_to_district[future] = district
+            
+            # Process completed futures
+            for future in as_completed(future_to_district):
+                district = future_to_district[future]
+                try:
+                    journey_duration = future.result()
+                    if journey_duration <= max_travel_time:
+                        filtered_districts[district] = journey_duration
+                except Exception as e:
+                    logging.error(f"Error calculating journey to {district}: {str(e)}")
+                    
+        return filtered_districts
+    
+    # If cache is provided, use the original approach
     for (district, data) in districts.items():
         # workplace district should compute from center of district
         if district == workplace_district:
@@ -27,26 +91,77 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
 def get_all_distances(districts):
     distances = {}
     logging.info("Caching all distances...")
-    n = (len(districts) * (len(districts)-1)  // 2)
+    
+    # Calculate total number of distance calculations needed
+    n = (len(districts) * (len(districts)-1) // 2)  # Only one-way journeys
     i = 0
-
-    futures = []
-    for district1 in districts:
-        with ThreadPoolExecutor(max_workers=10) as executor:
-            for district2 in districts:
-                if district1 != district2 and (district1, district2) not in distances and (district2, district1) not in distances:
-                    distances[(district1, district2)] = executor.submit(get_journey, districts[district1]['latitude'], districts[district1]['longitude'], districts[district2]['latitude'], districts[district2]['longitude'])
-                i += 1
-                logging.info(f"Progress: {i/n*100:.2f}%")
-
-    for result in as_completed(futures):
-        district1, district2 = result.
-
-        for district2 in districts:
-            if district1 != district2 and (district1, district2) not in distances and (district2, district1) not in distances:
-                distances[(district1, district2)] = get_journey(districts[district1]['latitude'], districts[district1]['longitude'], districts[district2]['latitude'], districts[district2]['longitude'])
-            i += 1
-            logging.info(f"Progress: {i/n*100:.2f}%")
+    
+    # Create a list of all district pairs we need to calculate
+    # Only calculate one-way journeys, using alphabetical ordering to ensure consistency
+    district_pairs = []
+    district_names = sorted(districts.keys())  # Sort districts alphabetically
+    
+    for i, district1 in enumerate(district_names):
+        for district2 in district_names[i+1:]:  # Only consider districts that come after district1
+            district_pairs.append((district1, district2))
+    
+    logging.info(f"Will calculate {len(district_pairs)} one-way journeys between districts")
+    
+    # Rate limiting variables
+    request_timestamps = []
+    requests_per_minute_limit = 499  # To be safe, staying below 500
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # Map of futures to their district pairs
+        future_to_pair = {}
+        
+        for district1, district2 in district_pairs:
+            # Check rate limiting
+            current_time = time.time()
+            request_timestamps = [t for t in request_timestamps if current_time - t < 60]  # Keep only timestamps from last minute
+            
+            if len(request_timestamps) >= requests_per_minute_limit:
+                # Sleep until we're under the rate limit
+                oldest_timestamp = min(request_timestamps)
+                sleep_time = 60 - (current_time - oldest_timestamp)
+                if sleep_time > 0:
+                    logging.info(f"Rate limit approaching, sleeping for {sleep_time:.2f} seconds")
+                    time.sleep(sleep_time)
+                    # Reset timestamps after sleeping
+                    current_time = time.time()
+                    request_timestamps = []
+            
+            # Add current request timestamp
+            request_timestamps.append(current_time)
+            
+            # Submit job to executor
+            future = executor.submit(
+                get_journey,
+                districts[district1]['latitude'],
+                districts[district1]['longitude'],
+                districts[district2]['latitude'],
+                districts[district2]['longitude']
+            )
+            future_to_pair[future] = (district1, district2)
+            
+            if len(future_to_pair) % 10 == 0:
+                logging.info(f"Submitted: {len(future_to_pair)}/{len(district_pairs)} ({len(future_to_pair)/len(district_pairs)*100:.2f}%)")
+        
+        # Process completed futures
+        completed = 0
+        for future in as_completed(future_to_pair):
+            district1, district2 = future_to_pair[future]
+            try:
+                journey_duration = future.result()
+                # Store both directions with the same journey duration
+                distances[(district1, district2)] = journey_duration
+                distances[(district2, district1)] = journey_duration  # Assume return journey takes the same time
+                
+                completed += 1
+                if completed % 10 == 0:
+                    logging.info(f"Completed: {completed}/{len(district_pairs)} ({completed/len(district_pairs)*100:.2f}%)")
+            except Exception as e:
+                logging.error(f"Error calculating journey from {district1} to {district2}: {str(e)}")
 
     logging.info("All distances cached")
     return distances
