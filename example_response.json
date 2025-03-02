@@ -1,0 +1,151 @@
+{
+    "recommendations": {
+      "CR4": 1251.0
+    },
+    "savings_predictions": {
+      "CR4": [
+        {
+          "reasons": [
+            "This year, you saved \u00a310000.00 from your salary",
+            "This year, inflation adjusted your wealth to \u00a39710.45",
+            "This year, your rent payments in CR4 are predicted to be \u00a31251.00",
+            "This year, your gas bills are predicted to be Ticker\nNG=F    494.150089\nName: 3813, dtype: float64",
+            "This year, your electricity bills are predicted to be 780.9059759148496",
+            "This year, your water bills are predicted to be 460.5075366186754",
+            "This year, your transport costs are predicted to be \u00a32520.48"
+          ],
+          "wealth": 6723.8901347911005,
+          "stats": {
+            "investment_portfolio": 10000.00,
+            "inflation": 0.029,
+            "rent": 1251.00,
+            "gas": 494.15,
+            "electricity": 780.91,
+            "water": 460.51,
+            "crime_rate": 1245.32,
+            "planning_permission": 87.5,
+            "transport_zone": 5,
+            "transport_monthly_cost": 210.04,
+            "transport_annual_cost": 2520.48,
+            "transport": 2520.48
+          }
+        },
+        {
+          "reasons": [
+            "This year, given you told us you work in the Technology sector, we predict your salary will increase by 2500.0",
+            "This year, your existing investments grew by \u00a3791.43 (7.9% return)",
+            "This year, you saved \u00a310500.00 from your salary",
+            "This year, inflation adjusted your wealth to \u00a320595.22",
+            "This year, your rent payments in CR4 are predicted to be \u00a31251.00",
+            "This year, your gas bills are predicted to be Ticker\nNG=F    547.756423\nName: 3813, dtype: float64",
+            "This year, your electricity bills are predicted to be 553.2536850295456",
+            "This year, your water bills are predicted to be 251.81254281484078",
+            "This year, your transport costs are predicted to be \u00a32596.09"
+          ],
+          "wealth": 17991.39256490805,
+          "stats": {
+            "salary": 102500.00,
+            "investment_portfolio": 21291.43,
+            "inflation": 0.031,
+            "rent": 1251.00,
+            "gas": 547.76,
+            "electricity": 553.25,
+            "water": 251.81,
+            "crime_rate": 1267.45,
+            "planning_permission": 92.3,
+            "transport_zone": 5,
+            "transport_monthly_cost": 216.34,
+            "transport_annual_cost": 2596.09,
+            "transport": 2596.09
+          }
+        },
+        {
+          "reasons": [
+            "This year, given you told us you work in the Technology sector, we predict your salary will increase by 5000.000000000007",
+            "This year, your existing investments grew by \u00a31685.07 (7.9% return)",
+            "This year, you saved \u00a311000.00 from your salary",
+            "This year, inflation adjusted your wealth to \u00a332738.26",
+            "This year, your rent payments in CR4 are predicted to be \u00a31251.00",
+            "This year, your gas bills are predicted to be Ticker\nNG=F    548.437802\nName: 3813, dtype: float64",
+            "This year, your electricity bills are predicted to be 546.273778506121",
+            "This year, your water bills are predicted to be 667.6994485991534",
+            "This year, your transport costs are predicted to be \u00a32673.97"
+          ],
+          "wealth": 29724.848266836372,
+          "stats": {
+            "salary": 105000.00,
+            "investment_portfolio": 33976.50,
+            "inflation": 0.033,
+            "rent": 1251.00,
+            "gas": 548.44,
+            "electricity": 546.27,
+            "water": 667.70,
+            "crime_rate": 1289.58,
+            "planning_permission": 97.1,
+            "transport_zone": 5,
+            "transport_monthly_cost": 222.83,
+            "transport_annual_cost": 2673.97,
+            "transport": 2673.97
+          }
+        },
+        {
+          "reasons": [
+            "This year, given you told us you work in the Technology sector, we predict your salary will increase by 7499.999999999993",
+            "This year, your existing investments grew by \u00a32689.00 (7.9% return)",
+            "This year, you saved \u00a311500.00 from your salary",
+            "This year, inflation adjusted your wealth to \u00a346229.79",
+            "This year, your rent payments in CR4 are predicted to be \u00a31251.00",
+            "This year, your gas bills are predicted to be Ticker\nNG=F    549.119181\nName: 3813, dtype: float64",
+            "This year, your electricity bills are predicted to be 583.1954452475269",
+            "This year, your water bills are predicted to be 736.4251651873626",
+            "This year, your transport costs are predicted to be \u00a32754.19"
+          ],
+          "wealth": 43110.054039596165,
+          "stats": {
+            "salary": 107500.00,
+            "investment_portfolio": 48165.50,
+            "inflation": 0.035,
+            "rent": 1251.00,
+            "gas": 549.12,
+            "electricity": 583.20,
+            "water": 736.43,
+            "crime_rate": 1311.71,
+            "planning_permission": 101.9,
+            "transport_zone": 5,
+            "transport_monthly_cost": 229.52,
+            "transport_annual_cost": 2754.19,
+            "transport": 2754.19
+          }
+        },
+        {
+          "reasons": [
+            "This year, given you told us you work in the Technology sector, we predict your salary will increase by 10000.0",
+            "This year, your existing investments grew by \u00a33811.96 (7.9% return)",
+            "This year, you saved \u00a312000.00 from your salary",
+            "This year, inflation adjusted your wealth to \u00a361166.72",
+            "This year, your rent payments in CR4 are predicted to be \u00a31251.00",
+            "This year, your gas bills are predicted to be Ticker\nNG=F    549.80056\nName: 3813, dtype: float64",
+            "This year, your electricity bills are predicted to be 626.5282527996087",
+            "This year, your water bills are predicted to be 326.7584699474976",
+            "This year, your transport costs are predicted to be \u00a32836.82"
+          ],
+          "wealth": 58412.633001884606,
+          "stats": {
+            "salary": 110000.00,
+            "investment_portfolio": 63977.46,
+            "inflation": 0.037,
+            "rent": 1251.00,
+            "gas": 549.80,
+            "electricity": 626.53,
+            "water": 326.76,
+            "crime_rate": 1333.84,
+            "planning_permission": 106.7,
+            "transport_zone": 5,
+            "transport_monthly_cost": 236.40,
+            "transport_annual_cost": 2836.82,
+            "transport": 2836.82
+          }
+        }
+      ]
+    }
+  }
