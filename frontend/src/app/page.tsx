@@ -57,17 +57,15 @@ export default function Home() {
         toast.error("Please select a work location");
         return;
       }
-      // const results = await query(workLocation, transportMode, rent);
-      const results = await getPredictions(
-        workLocation.lng,
-        workLocation.lat,
-        transportMode,
-        rent,
-        commuteTime
-      );
+      const results = await query(workLocation, transportMode, rent);
+      // const results = await getPredictions(
+      //   workLocation.lng,
+      //   workLocation.lat,
+      //   transportMode,
+      //   rent,
+      //   commuteTime
+      // );
 
-      console.log(results);
-      alert("results");
       const map = new Map();
 
       for (const result of results) {
@@ -410,8 +408,8 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="w-full flex items-center justify-center absolute p-5 z-10">
-        <div className="bg-background rounded-full flex h-12 items-center ring-ring ring-1 px-5 py-3 gap-5">
+      <div className="w-full flex items-center justify-center absolute p-5  z-10">
+        <div className="bg-background rounded-full flex h-12 items-center ring-ring ring-1 px-5 pr-2 py-3 gap-5">
           <WorkLocation setWorkLocation={setWorkLocation} />
           <Separator orientation="vertical" />
           <CommutePopover
@@ -425,7 +423,11 @@ export default function Home() {
           <Separator orientation="vertical" />
           <SalaryPopover salary={salary} onSalaryChange={handleSalaryChange} />
           <Separator orientation="vertical" />
-          <Button variant="ghost" className="py-0 !px-4" onClick={handleSearch}>
+          <Button
+            variant="ghost"
+            className="py-0 !px-4 rounded-r-full"
+            onClick={handleSearch}
+          >
             <Search className="text-ring size-5" />
           </Button>
         </div>

@@ -55,7 +55,7 @@ export async function getPredictions(
   rent: 1 | 2 | 3,
   max_travel_time: number
 ) {
-  // console.log(lng, lat, transportMode, rent, max_travel_time);
+  console.log(lng, lat, rent, max_travel_time);
 
   const response = await fetch(`http://127.0.0.1:5000/predict`, {
     method: "POST",
@@ -63,9 +63,11 @@ export async function getPredictions(
       longitude: lng,
       latitude: lat,
       transport_mode,
-      min_rent: rent === 1 ? 1000 : rent === 2 ? 2000 : 3000,
-      max_rent: rent === 1 ? 2000 : rent === 2 ? 3000 : 4000,
+      rent,
       max_travel_time,
+      sector: "Technology",
+      percent_saving: 30,
+      years: 1,
     }),
     headers: {
       "Content-Type": "application/json",
@@ -73,8 +75,8 @@ export async function getPredictions(
     },
   });
 
+  console.log(await response.text());
   const data = await response.json();
-  console.log(data);
 
   // extend this data to have random crime, commute, and rent ratings
   const extendedData = data.map((item: QueryResult) => ({
