@@ -123,9 +123,9 @@ if __name__ == '__main__':
     logging.info(f"Loaded {len(savings_cache)} savings cache entries")
 
     logging.info("Initialising TomTom")
-    walk_tom_tom = TomTom(mock=True)
-    drive_tom_tom = TomTom(mode='drive', mock=True)
-    bike_tom_tom = TomTom(mode='bike', mock=True)
+    walk_tom_tom = TomTom()
+    drive_tom_tom = TomTom(mode='drive')
+    bike_tom_tom = TomTom(mode='bike')
     logging.info("TomTom initialised")
 
     # pre-load travel cache
