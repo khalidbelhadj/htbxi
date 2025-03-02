@@ -1,4 +1,5 @@
 # santos will put code here
+import pickle
 import requests
 import logging
 import time
@@ -31,10 +32,12 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
                 district_calculations.append((districts[workplace_district]['latitude'], 
                                             districts[workplace_district]['longitude'],
                                             data['latitude'], data['longitude'], district))
-        
+        logging.info(f"Will calculate journeys to {len(district_calculations)} districts")
+        print(f"    Will calculate journeys to {len(district_calculations)} districts")
         with ThreadPoolExecutor(max_workers=10) as executor:
             # Map of futures to districts
             future_to_district = {}
+            start_time = time.time()
             
             for from_lat, from_lon, to_lat, to_lon, district in district_calculations:
                 # Check rate limiting
@@ -62,11 +65,14 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
                 district = future_to_district[future]
                 try:
                     journey_duration = future.result()
+                    logging.info(f"Journey to {district} took {journey_duration} minutes")
+                    print(f"    Journey to {district} took {journey_duration} minutes")
                     if journey_duration <= max_travel_time:
                         filtered_districts[district] = journey_duration
                 except Exception as e:
                     logging.error(f"Error calculating journey to {district}: {str(e)}")
-                    
+        
+        print(time.time() - start_time)      
         return filtered_districts
     
     # If cache is provided, use the original approach
@@ -86,6 +92,7 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
         if journey_duration <= max_travel_time:
             filtered_districts[district] = journey_duration
 
+    
     return filtered_districts
 
 def get_all_distances(districts):
@@ -190,5 +197,6 @@ def get_journey(from_lat, from_lon, to_lat, to_lon):
 
 
 if __name__ == "__main__":
-    print(get_journey(51.509372,-0.076177, 51.501105,-0.126124))
+    districts = pickle.load(open('districts.pkl', 'rb'))
+    print(filter_districts_by_distance("BR1", 51.41204637320559,0.0209232400318979, districts, 30))
 
