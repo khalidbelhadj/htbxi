@@ -1,4 +1,7 @@
 import requests
+import logging
+
+
 
 def get_postcodes_by_coordinates(latitude: float, longitude: float, radius: int = 400) -> dict:
     """
@@ -37,12 +40,16 @@ def get_district_coords(district: str) -> dict:
     except:
         return response.json()["result"][0]
 
-def get_all_districts(districts: list) -> dict:
+def get_all_districts(_districts: list) -> dict:
     """
     Get coordinates for all districts in the list
     """
     districts = {}
-    for district in districts:
-        districts[district] = get_district_coords(district)
+    for district in _districts:
+        try:
+            districts[district] = get_district_coords(district)
+        except Exception as e:
+            logging.error(f"Failed to get coordinates for district: {district}")
+            logging.error(e)
     return districts
         

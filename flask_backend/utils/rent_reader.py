@@ -8,6 +8,11 @@ def is_numeric(value):
         return True
     except ValueError:
         return False
+    
+def get_district_names():
+    raw_data = pd.ExcelFile('data/rent_data.xlsx')
+    district_data = raw_data.parse('3', skiprows=2, names=['District', 'Category', 'Count', 'Mean', 'LowerQ', 'Median', 'UpperQ'])
+    return district_data['District'].unique()
 
 def get_rent_data(file_path = 'data/rent_data.xlsx'):
     raw_data = pd.ExcelFile(file_path)
@@ -38,7 +43,7 @@ def get_burrough_by_district(district):
     try:
         return response.json()["result"]["admin_district"]
     except:
-        return response.json()["result"][0]["admin_county"]
+        return response.json()["result"][0]["admin_district"]
 
 def get_rent_by_burrough(rent_data, burroughs):
     # try first burrough thats in our data
@@ -53,3 +58,9 @@ def get_rent_by_district(district):
         return district_data[district_data['District'] == district]["Mean"].values[0]
     else:
         return get_rent_by_burrough(burrough_data, get_burrough_by_district(district))
+    
+def get_district_from_coords(lat, lon):
+    url = f"https://api.postcodes.io/postcodes?lon={lon}&lat={lat}"
+    response = requests.get(url)
+    response.raise_for_status()  # Raise exception for bad status codes
+    return response.json()["result"]["outcode"]
