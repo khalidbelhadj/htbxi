@@ -2,13 +2,13 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Slider } from "./ui/slider";
-import { Car, Train, FootprintsIcon as Walk } from "lucide-react";
+import { Car, Train, Bike } from "lucide-react";
 
 type CommutePopoverProps = {
   commuteTime: number;
-  transportMode: "walk" | "drive" | "public";
+  transportMode: "bike" | "drive" | "public";
   onCommuteTimeChange: (value: number) => void;
-  onTransportModeChange: (mode: "walk" | "drive" | "public") => void;
+  onTransportModeChange: (mode: "bike" | "drive" | "public") => void;
 };
 
 export default function CommutePopover({
@@ -29,7 +29,7 @@ export default function CommutePopover({
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" className="w-64 justify-start">
-          {transportMode === "walk" && <Walk className="h-4 w-4" />}
+          {transportMode === "bike" && <Bike className="h-4 w-4" />}
           {transportMode === "drive" && <Car className="h-4 w-4" />}
           {transportMode === "public" && <Train className="h-4 w-4" />}
           <span>Commute: {formatTime(commuteTime)}</span>
@@ -45,12 +45,12 @@ export default function CommutePopover({
           </div>
           <div className="flex gap-2">
             <Button
-              variant={transportMode === "walk" ? "default" : "outline"}
+              variant={transportMode === "bike" ? "default" : "outline"}
               size="icon"
-              onClick={() => onTransportModeChange("walk")}
+              onClick={() => onTransportModeChange("bike")}
             >
-              <Walk className="h-4 w-4" />
-              <span className="sr-only">Walking</span>
+              <Bike className="h-4 w-4" />
+              <span className="sr-only">Bike</span>
             </Button>
             <Button
               variant={transportMode === "drive" ? "default" : "outline"}

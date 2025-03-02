@@ -21,35 +21,35 @@ global savings_cache
 def predict():
     try:
         data = request.get_json()
-        
+
         # Extract coordinates from request to district
         workplace_latitude = data.get('latitude')
         workplace_longitude = data.get('longitude')
         workplace_district = get_district_from_coords(workplace_latitude, workplace_longitude)
-        
+
         if not workplace_latitude or not workplace_longitude:
             return jsonify({
                 'error': 'Missing required parameters: latitude and longitude'
             }), 400
-        
+
         if not districts:
             return jsonify({
                 'error': 'District data not found'
             }), 404
-        
+
         # filter districts by distance
         max_travel_time = data.get('max_travel_time')
         transport_mode = data.get('transport_mode')
 
         if transport_mode == 'public':
             filtered_districts = filter_districts_by_distance(workplace_district, workplace_latitude, workplace_longitude, districts, max_travel_time)
-        elif transport_mode == 'car':
+        elif transport_mode == 'drive':
             filtered_districts = drive_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
-        elif transport_mode == 'bike':
+        elif transport_mode ==  'bike':
             filtered_districts = bike_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
         else:
             raise Exception(f"Invalid transport mode: {transport_mode}")
-        
+
         rent_data = {}
         # Get rent data for each postcode
         for district in filtered_districts:
@@ -57,12 +57,12 @@ def predict():
             rent_data[district] = rent
 
         logging.info(f"Rent data: {rent_data}")
-        
+
         if rent_data is None or len(rent_data) == 0:
             return jsonify({
                 'error': f'No rent data found for district {district}'
             }), 404
-            
+
         # Extract constraints from request
         rent = int(data.get('rent'))
         min_rent, max_rent = get_rent_range(rent)
@@ -75,7 +75,7 @@ def predict():
             return jsonify({
                 'error': 'No rent data found matching the given constraints'
             }), 404
-        
+
         # get savings predictions for each postcode
         salary = data.get('salary')
         percent_saving = data.get('percent_saving')
@@ -87,12 +87,12 @@ def predict():
             savings_prediction = predict_savings(district, salary, percent_saving, sector, years, predict_cache=savings_cache)
             predictions[district] = savings_prediction
 
-        # get average rent value for each postcode        
+        # get average rent value for each postcode
         return jsonify({
             'recommendations': rent_data,
             'savings_predictions': predictions
         })
-        
+
     except Exception as e:
         # save caches
         pickle.dump(districts, open('districts.pkl', 'wb'))

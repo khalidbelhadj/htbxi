@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Input } from "./ui/input";
 import { LngLat } from "mapbox-gl";
+import { AnimatePresence, motion } from "framer-motion";
 
 type Props = {
   setWorkLocation: (workLocation: LngLat) => void;
@@ -92,7 +93,7 @@ export default function WorkLocation({ setWorkLocation }: Props) {
     };
 
     if (isOpen) {
-      const debounceTimeout = setTimeout(searchPlaces, 500);
+      const debounceTimeout = setTimeout(searchPlaces, 200);
       return () => clearTimeout(debounceTimeout);
     }
   }, [searchValue, sessionToken, isOpen]);
@@ -113,36 +114,44 @@ export default function WorkLocation({ setWorkLocation }: Props) {
         placeholder="Work location..."
         className="focus-visible:ring-0 focus-within:border-none shadow-none border-none h-full w-[15rem] p-1"
       />
-      {isOpen && searchResults.length > 0 && (
-        <ul className="overflow-y-auto absolute top-full left-0 w-80 bg-background shadow-md rounded-md border-ring border">
-          {searchResults.slice(0, 5).map((result) => (
-            <li key={result.mapbox_id}>
-              <button
-                className="w-full text-left px-2 py-3 hover:bg-accent cursor-pointer"
-                onClick={async () => {
-                  // TODO: Retrieve coordinates kor the selected location
-                  // https://api.mapbox.com/search/searchbox/v1/retrieve/{id}
-                  const response = await fetch(
-                    `https://api.mapbox.com/search/searchbox/v1/retrieve/${result.mapbox_id}?session_token=${sessionToken}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
-                  );
-                  const data = await response.json();
-                  const coordinates = data.features[0].geometry.coordinates;
-                  const lngLat = new LngLat(coordinates[0], coordinates[1]);
 
-                  handleSelect(result.place_formatted, lngLat);
-                }}
-              >
-                <div className="flex flex-col">
-                  <div className="max-w-full truncate">{result.name}</div>
-                  <div className="text-sm text-muted-foreground max-w-full truncate">
-                    {result.place_formatted}
+      <AnimatePresence>
+        {isOpen && searchResults.length > 0 && (
+          <motion.ul
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="overflow-y-auto absolute top-[160%] left-0 w-80 bg-background shadow-md rounded-md border-ring border"
+          >
+            {searchResults.slice(0, 5).map((result) => (
+              <li key={result.mapbox_id}>
+                <button
+                  className="w-full text-left px-2 py-3 hover:bg-accent cursor-pointer"
+                  onClick={async () => {
+                    // TODO: Retrieve coordinates kor the selected location
+                    // https://api.mapbox.com/search/searchbox/v1/retrieve/{id}
+                    const response = await fetch(
+                      `https://api.mapbox.com/search/searchbox/v1/retrieve/${result.mapbox_id}?session_token=${sessionToken}&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+                    );
+                    const data = await response.json();
+                    const coordinates = data.features[0].geometry.coordinates;
+                    const lngLat = new LngLat(coordinates[0], coordinates[1]);
+
+                    handleSelect(result.place_formatted, lngLat);
+                  }}
+                >
+                  <div className="flex flex-col">
+                    <div className="max-w-full truncate">{result.name}</div>
+                    <div className="text-sm text-muted-foreground max-w-full truncate">
+                      {result.place_formatted}
+                    </div>
                   </div>
-                </div>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+                </button>
+              </li>
+            ))}
+          </motion.ul>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
