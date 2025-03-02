@@ -21,7 +21,15 @@ def predict():
         # Extract coordinates from request to district
         workplace_latitude = data.get('latitude')
         workplace_longitude = data.get('longitude')
-        workplace_district = get_district_from_coords(workplace_latitude, workplace_longitude, districts)
+        workplace_district = get_district_from_coords(workplace_latitude, workplace_longitude)
+        # TODO: remove this once we have a real API
+        return jsonify({
+            'predicted': {
+                'SE6': 100000,
+                'SE16': 2000,
+                'BR1': 1500
+            }
+        })
         
         if not workplace_latitude or not workplace_longitude:
             return jsonify({
@@ -85,12 +93,12 @@ if __name__ == '__main__':
     logging.info(f"Loaded {len(districts)} districts")
 
     # pre-load travel cache
-    if not os.path.exists('travel_cache.pkl'):
-        logging.info("Travel cache not found, initialising")
-        travel_cache = get_all_distances(districts)
-    else:
-        logging.info("Travel cache found, loading from file")
-        travel_cache = pickle.load(open('travel_cache.pkl', 'rb'))
-    logging.info(f"Loaded {len(travel_cache)} travel cache entries")
+    # if not os.path.exists('travel_cache.pkl'):
+    #     logging.info("Travel cache not found, initialising")
+    #     travel_cache = get_all_distances(districts)
+    # else:
+    #     logging.info("Travel cache found, loading from file")
+    #     travel_cache = pickle.load(open('travel_cache.pkl', 'rb'))
+    # logging.info(f"Loaded {len(travel_cache)} travel cache entries")
 
     app.run(debug=True)

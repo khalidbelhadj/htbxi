@@ -28,3 +28,25 @@ export async function query(
     },
   ];
 }
+
+
+export async function getPredictions(lng: number, lat: number, transportMode: "walk" | "drive" | "public", rent: 1 | 2 | 3) {
+  console.log(lng, lat, transportMode, rent)
+  
+  const response = await fetch(`http://127.0.0.1:5000/predict`, {
+    method: 'POST',
+    body: JSON.stringify({
+      longitude: lng,
+      latitude: lat,
+      transportMode,
+      rent
+    }),
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    }
+  })
+
+  const data = await response.json()
+  console.log(data)
+}

@@ -63,4 +63,10 @@ def get_district_from_coords(lat, lon):
     url = f"https://api.postcodes.io/postcodes?lon={lon}&lat={lat}"
     response = requests.get(url)
     response.raise_for_status()  # Raise exception for bad status codes
-    return response.json()["result"]["outcode"]
+    try:
+        return response.json()["result"]["outcode"]
+    except:
+        if len(response.json()["result"]) > 0:
+            return response.json()["result"][0]["outcode"]
+        else:
+            return None
