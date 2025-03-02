@@ -9,7 +9,7 @@ import WorkLocation from "@/components/work-location";
 import CommutePopover from "@/components/commute-popover";
 import RentPopover from "@/components/rent-popover";
 import SalaryPopover from "@/components/salary-popover";
-import { getPredictions, query } from "@/actions";
+import { getPredictions } from "@/actions";
 import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -28,9 +28,7 @@ export default function Home() {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
   const selectedFeatureRef = useRef(false);
-  const [hoveredFeature, setHoveredFeature] = useState<GeoJSON.Feature | null>(
-    null
-  );
+  const [hoveredFeature, setHoveredFeature] = useState<string | null>(null);
 
   const [selectedFeature, setSelectedFeature] = useState(false);
 
@@ -57,28 +55,23 @@ export default function Home() {
         toast.error("Please select a work location");
         return;
       }
-      const results = await query(workLocation, transportMode, rent);
-      // const results = await getPredictions(
-      //   workLocation.lng,
-      //   workLocation.lat,
-      //   transportMode,
-      //   rent,
-      //   commuteTime
-      // );
+      // const results = await query(workLocation, transportMode, rent);
+      const results = await getPredictions(
+        workLocation.lng,
+        workLocation.lat,
+        transportMode,
+        rent,
+        commuteTime,
+        salary
+      );
 
-      const map = new Map();
-
-      for (const result of results) {
-        map.set(result.code, result);
-      }
-
-      return map;
+      return results;
     },
     onSuccess: async (data) => {
       if (!data || !mapRef.current) return;
 
       // Extract the area codes from the results
-      const areaCodes = Array.from(data.keys());
+      const areaCodes = Array.from(Object.keys(data["recommendations"]));
 
       // If we haven't loaded the GeoJSON data yet, load it now
       if (!mapRef.current.getSource("areas-source")) {
@@ -205,7 +198,7 @@ export default function Home() {
 
         const featureId = feature.properties?.name as string;
         if (!selectedFeatureRef.current) {
-          setHoveredFeature(feature);
+          setHoveredFeature(featureId);
         }
 
         // If we're hovering over a new feature
@@ -295,7 +288,84 @@ export default function Home() {
     }
   }, [workLocation]);
 
-  const hoverFeatureInfo = searchResults?.get(hoveredFeature?.properties?.name);
+  // Define a type for the savings predictions
+  type SavingsPredictions = {
+    [postcode: string]: Array<{
+      stats: {
+        transport_monthly_cost?: number;
+        rent?: number;
+        crime_rate?: number;
+        [key: string]: unknown;
+      };
+    }>;
+  };
+
+  const hoverFeatureInfo = hoveredFeature
+    ? {
+        code: hoveredFeature,
+        commute:
+          (searchResults?.savings_predictions as SavingsPredictions)?.[
+            hoveredFeature
+          ]?.[0]?.stats?.transport_monthly_cost?.toFixed(0) || 0,
+        commuteMode: "public", // Default to public transport
+        commuteRating: getRatingFromValue(
+          (searchResults?.savings_predictions as SavingsPredictions)?.[
+            hoveredFeature
+          ]?.[0]?.stats?.transport_monthly_cost || 0,
+          300,
+          200,
+          100
+        ),
+        rent:
+          (searchResults?.savings_predictions as SavingsPredictions)?.[
+            hoveredFeature
+          ]?.[0]?.stats?.rent?.toFixed(0) || 0,
+        rentRating: getRatingFromValue(
+          (searchResults?.savings_predictions as SavingsPredictions)?.[
+            hoveredFeature
+          ]?.[0]?.stats?.rent || 0,
+          1500,
+          1000,
+          800
+        ),
+        crime:
+          (searchResults?.savings_predictions as SavingsPredictions)?.[
+            hoveredFeature
+          ]?.[0]?.stats?.crime_rate?.toFixed(0) || 0,
+        crimeRating: getRatingFromValue(
+          (searchResults?.savings_predictions as SavingsPredictions)?.[
+            hoveredFeature
+          ]?.[0]?.stats?.crime_rate || 0,
+          1500,
+          1000,
+          500,
+          true
+        ),
+      }
+    : null;
+
+  // Helper function to determine rating based on value
+  function getRatingFromValue(
+    value: number,
+    threshold1: number,
+    threshold2: number,
+    threshold3: number,
+    isInverted: boolean = false
+  ): number {
+    if (isInverted) {
+      // For metrics where lower is better (like crime)
+      if (value <= threshold3) return 4;
+      if (value <= threshold2) return 3;
+      if (value <= threshold1) return 2;
+      return 1;
+    } else {
+      // For metrics where higher is better
+      if (value >= threshold1) return 1;
+      if (value >= threshold2) return 2;
+      if (value >= threshold3) return 3;
+      return 4;
+    }
+  }
 
   // const hoverFeatureInfo = {
   //   code: "SE7",

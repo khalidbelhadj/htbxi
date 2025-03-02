@@ -136,6 +136,6 @@ def get_rent_range(rent):
     elif rent == 2:
         max_rent = (district_data["Median"].mean() + burrough_data["Median"].mean()) / 2
     elif rent == 3:
-        max_rent = (district_data["UpperQ"].mean() + burrough_data["UpperQ"].mean()) / 2
+        max_rent = 10000
 
     return min_rent, max_rent

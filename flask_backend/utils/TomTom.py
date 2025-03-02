@@ -24,13 +24,14 @@ class TomTom:
         speed: Optional[float] = None,
         mock=False,
     ):
-        if mock:
-            return
+        self.mock = mock
         self.speed = self.default_speed[mode] if speed == None else speed
         self.mode = mode
         print(
             f"Initializing TomTom navigator for {place_name} for {mode} mode at {self.speed}"
         )
+        if self.mock:
+            return
         self.G = None
         self.nodes = None
         self.nodes_kdtree = None
@@ -102,22 +103,58 @@ class TomTom:
     def km_to_minutes(self, meters):
         return round((meters * 60 / self.speed) / 1000)
 
+    def euclidean_distance(self, start, end):
+        return np.sqrt((start.x - end.x) ** 2 + (start.y - end.y) ** 2)
+
     def filter_districts_within_time(
         self, workplace_district, districts, max_travel_time
     ):
         filtered_districts = {}
         for district in districts:
-            travel_time = self.calculate_route_time(
-                Point(
-                    districts[district]["longitude"], districts[district]["latitude"]
-                ),
-                Point(
-                    districts[workplace_district]["longitude"],
-                    districts[workplace_district]["latitude"],
-                ),
-            )
-            if travel_time <= max_travel_time:
-                filtered_districts[district] = travel_time
+            if self.mock:
+                travel_time = self.euclidean_distance(
+                    Point(
+                        districts[district]["longitude"],
+                        districts[district]["latitude"],
+                    ),
+                    Point(
+                        districts[workplace_district]["longitude"],
+                        districts[workplace_district]["latitude"],
+                    ),
+                )
+
+                # Convert lng/lat distance to meters using haversine formula
+                R = 6371000  # Earth's radius in meters
+                lat1 = districts[district]["latitude"]
+                lat2 = districts[workplace_district]["latitude"]
+                lng1 = districts[district]["longitude"]
+                lng2 = districts[workplace_district]["longitude"]
+
+                dlat = np.radians(lat2 - lat1)
+                dlng = np.radians(lng2 - lng1)
+
+                a = np.sin(dlat / 2) * np.sin(dlat / 2) + np.cos(
+                    np.radians(lat1)
+                ) * np.cos(np.radians(lat2)) * np.sin(dlng / 2) * np.sin(dlng / 2)
+                c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a))
+                travel_time = R * c  # Distance in meters
+
+                travel_time = self.km_to_minutes(travel_time)
+                if travel_time <= max_travel_time:
+                    filtered_districts[district] = travel_time
+            else:
+                travel_time = self.calculate_route_time(
+                    Point(
+                        districts[district]["longitude"],
+                        districts[district]["latitude"],
+                    ),
+                    Point(
+                        districts[workplace_district]["longitude"],
+                        districts[workplace_district]["latitude"],
+                    ),
+                )
+                if travel_time <= max_travel_time:
+                    filtered_districts[district] = travel_time
         return filtered_districts
 
 

@@ -1,6 +1,7 @@
 "use server";
 
 import { LngLat } from "mapbox-gl";
+import example_response from "../public/example_response.json";
 
 type QueryResult = {
   code: string;
@@ -53,11 +54,10 @@ export async function getPredictions(
   lat: number,
   transport_mode: "bike" | "drive" | "public",
   rent: 1 | 2 | 3,
-  max_travel_time: number
+  max_travel_time: number,
+  salary: number
 ) {
-  console.log(lng, lat, rent, max_travel_time);
-
-  const response = await fetch(`http://127.0.0.1:5000/predict`, {
+  const response = await fetch(`http://127.0.0.1:5000/plan`, {
     method: "POST",
     body: JSON.stringify({
       longitude: lng,
@@ -68,6 +68,7 @@ export async function getPredictions(
       sector: "Technology",
       percent_saving: 30,
       years: 1,
+      salary,
     }),
     headers: {
       "Content-Type": "application/json",
@@ -75,15 +76,17 @@ export async function getPredictions(
     },
   });
 
-  console.log(await response.text());
+  // const data = example_response;
   const data = await response.json();
+  console.log(data);
+  return data;
 
-  // extend this data to have random crime, commute, and rent ratings
-  const extendedData = data.map((item: QueryResult) => ({
-    ...item,
-    crimeRating: Math.floor(Math.random() * 5) + 1,
-    commuteRating: Math.floor(Math.random() * 5) + 1,
-    rentRating: Math.floor(Math.random() * 5) + 1,
-  }));
-  return extendedData;
+  // // extend this data to have random crime, commute, and rent ratings
+  // const extendedData = data.map((item: QueryResult) => ({
+  //   ...item,
+  //   crimeRating: Math.floor(Math.random() * 5) + 1,
+  //   commuteRating: Math.floor(Math.random() * 5) + 1,
+  //   rentRating: Math.floor(Math.random() * 5) + 1,
+  // }));
+  // return extendedData;
 }

@@ -24,6 +24,50 @@ def predict():
     try:
         data = request.get_json()
 
+        workplace_latitude = data.get("latitude")
+        workplace_longitude = data.get("longitude")
+        workplace_district = get_district_from_coords(
+            workplace_latitude, workplace_longitude
+        )
+
+        if not workplace_latitude or not workplace_longitude:
+            return (
+                jsonify(
+                    {"error": "Missing required parameters: latitude and longitude"}
+                ),
+                400,
+            )
+
+        if not districts:
+            return jsonify({"error": "District data not found"}), 404
+
+        # get savings predictions for each postcode
+        salary = data.get("salary")
+        percent_saving = data.get("percent_saving")
+        sector = data.get("sector")
+        print(f"Sector: {sector}")
+        years = data.get("years")
+
+        logging.info(f"Predicting savings for district: {workplace_district}")
+        savings_prediction = predict_savings(
+            workplace_district,
+            salary,
+            percent_saving,
+            sector,
+            years,
+            predict_cache=savings_cache,
+        )
+
+        return jsonify({"savings_predictions": savings_prediction})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/plan", methods=["POST"])
+def plan():
+    try:
+        data = request.get_json()
+
         # Extract coordinates from request to district
         workplace_latitude = data.get("latitude")
         workplace_longitude = data.get("longitude")
@@ -75,7 +119,7 @@ def predict():
 
         if rent_data is None or len(rent_data) == 0:
             return (
-                jsonify({"error": f"No rent data found for district {district}"}),
+                jsonify({"error": f"No rent data found for district"}),
                 404,
             )
 
@@ -93,28 +137,8 @@ def predict():
                 404,
             )
 
-        # get savings predictions for each postcode
-        salary = data.get("salary")
-        percent_saving = data.get("percent_saving")
-        sector = data.get("sector")
-        years = data.get("years")
-        predictions = {}
-        for district in rent_data:
-            logging.info(f"Predicting savings for district: {district}")
-            savings_prediction = predict_savings(
-                district,
-                salary,
-                percent_saving,
-                sector,
-                years,
-                predict_cache=savings_cache,
-            )
-            predictions[district] = savings_prediction
-
         # get average rent value for each postcode
-        return jsonify(
-            {"recommendations": rent_data, "savings_predictions": predictions}
-        )
+        return jsonify({"recommendations": rent_data})
 
     except Exception as e:
         # save caches
