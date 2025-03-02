@@ -1,6 +1,9 @@
 .venv
+*/__pycache__
+.DS_Store
 
-__pycache__/
+# Python
+__pycache__
 *.pyc
-cache/
-*/map_cache/*
+*.pyo
+*.pyd
