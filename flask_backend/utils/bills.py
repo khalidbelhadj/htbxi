@@ -38,9 +38,7 @@ def get_gas_futures_data():
     else:
         # If it's already a scalar value
         latest_price = float(latest_price_series)
-    
-    print("Latest price (converted to float):", latest_price)
-    
+        
     # Generate simulated futures contracts for the next 10 years.
     future_dates = pd.date_range(start=datetime.today(), periods=10, freq='YE')
     futures_df = pd.DataFrame({
@@ -121,8 +119,8 @@ def forecast_commodity(historical_df, futures_df, target_year):
     
     future_date = datetime.today() + timedelta(days=target_year * 365)
     future_timestamp = future_date.timestamp()
-    # Ensure future_timestamp is 2D by reshaping it
-    X_future = sm.add_constant(np.array([future_timestamp]).reshape(-1, 1))
+    # Explicitly create a 2D array with a constant column (1) and the timestamp.
+    X_future = np.array([[1, future_timestamp]])
     hist_forecast = model.predict(X_future)[0]
     
     # Futures Contracts Forecast
@@ -174,14 +172,26 @@ def predict_bills(bills, year):
     for commodity in bills:
         hist_data = bills[commodity].get('historical')
         fut_data = bills[commodity].get('futures')
-        predictions[commodity] = forecast_commodity(hist_data, fut_data, year)
+        pred_price = forecast_commodity(hist_data, fut_data, year)
+        predictions[commodity] = (pred_price / bills[commodity]['historical']['Price'].iloc[-1]) * bills[commodity]['current_price']
     return predictions
 
 if __name__ == "__main__":
     bills = {
         'gas': {
             'historical': get_gas_historical_data(),
-            'futures': get_gas_futures_data()
+            'futures': get_gas_futures_data(),
+            'current_price': 100
+        },
+        'electricity': {
+            'historical': get_electricity_historical_data(),
+            'futures': get_electricity_futures_data(),
+            'current_price': 120
+        },
+        'water': { 
+            'historical': get_water_historical_data(),
+            'futures': get_water_futures_data(),
+            'current_price': 10
         }
     }
-    print(predict_bills(bills, 3))
+    print(predict_bills(bills, 10))

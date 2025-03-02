@@ -22,14 +22,6 @@ def predict():
         workplace_latitude = data.get('latitude')
         workplace_longitude = data.get('longitude')
         workplace_district = get_district_from_coords(workplace_latitude, workplace_longitude)
-        # TODO: remove this once we have a real API
-        return jsonify({
-            'predicted': {
-                'SE6': 100000,
-                'SE16': 2000,
-                'BR1': 1500
-            }
-        })
         
         if not workplace_latitude or not workplace_longitude:
             return jsonify({
@@ -43,7 +35,7 @@ def predict():
         
         # filter districts by distance
         max_travel_time = data.get('max_travel_time')
-        filtered_districts = filter_districts_by_distance(workplace_district, districts, max_travel_time, travel_cache)
+        filtered_districts = filter_districts_by_distance(workplace_district, districts, max_travel_time)
         
         rent_data = {}
         # Get rent data for each postcode
@@ -70,10 +62,23 @@ def predict():
             return jsonify({
                 'error': 'No rent data found matching the given constraints'
             }), 404
+        
+        # get savings predictions for each postcode
+        salary = data.get('salary')
+        percent_saving = data.get('percent_saving')
+        sector = data.get('sector')
+        years = data.get('years')
+        predictions = {}
+        for district in rent_data:
+            logging.info(f"Predicting savings for district: {district}")
+            savings_prediction = predict_savings(district, salary, percent_saving, sector, years)
+            predictions[district] = savings_prediction
+            break # TODO: remove this, to make it work, done for testing
 
         # get average rent value for each postcode        
         return jsonify({
-            'predictions': rent_data
+            'recommendations': rent_data,
+            'savings_predictions': savings_prediction
         })
         
     except Exception as e:
@@ -93,6 +98,13 @@ if __name__ == '__main__':
     logging.info(f"Loaded {len(districts)} districts")
 
     # pre-load travel cache
+    # if not os.path.exists('travel_cache.pkl'):
+    #     logging.info("Travel cache not found, initialising")
+    #     travel_cache = get_all_distances(districts)
+    # else:
+    #     logging.info("Travel cache found, loading from file")
+    #     travel_cache = pickle.load(open('travel_cache.pkl', 'rb'))
+    # logging.info(f"Loaded {len(travel_cache)} travel cache entries")
     # if not os.path.exists('travel_cache.pkl'):
     #     logging.info("Travel cache not found, initialising")
     #     travel_cache = get_all_distances(districts)
