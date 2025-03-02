@@ -19,7 +19,7 @@ global savings_cache
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # try:
+    try:
         data = request.get_json()
         
         # Extract coordinates from request to district
@@ -43,10 +43,10 @@ def predict():
 
         if transport_mode == 'public_transport':
             filtered_districts = filter_districts_by_distance(workplace_district, workplace_latitude, workplace_longitude, districts, max_travel_time)
-        # elif transport_mode == 'car':
-        #     filtered_districts = drive_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
-        # elif transport_mode == 'bike':
-        #     filtered_districts = bike_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
+        elif transport_mode == 'car':
+            filtered_districts = drive_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
+        elif transport_mode == 'bike':
+            filtered_districts = bike_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
         else:
             raise Exception(f"Invalid transport mode: {transport_mode}")
         
@@ -93,14 +93,14 @@ def predict():
             'savings_predictions': predictions
         })
         
-    # except Exception as e:
-    #     # save caches
-    #     pickle.dump(districts, open('districts.pkl', 'wb'))
-    #     # pickle.dump(travel_cache, open('travel_cache.pkl', 'wb'))
-    #     pickle.dump(savings_cache, open('savings_cache.pkl', 'wb'))
-    #     return jsonify({
-    #         'error': str(e)
-    #     }), 500
+    except Exception as e:
+        # save caches
+        pickle.dump(districts, open('districts.pkl', 'wb'))
+        # pickle.dump(travel_cache, open('travel_cache.pkl', 'wb'))
+        pickle.dump(savings_cache, open('savings_cache.pkl', 'wb'))
+        return jsonify({
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     # pre-load all districts
@@ -122,11 +122,11 @@ if __name__ == '__main__':
         savings_cache = pickle.load(open('savings_cache.pkl', 'rb'))
     logging.info(f"Loaded {len(savings_cache)} savings cache entries")
 
-    # logging.info("Initialising TomTom")
-    # walk_tom_tom = TomTom()
-    # drive_tom_tom = TomTom(mode='drive')
-    # bike_tom_tom = TomTom(mode='bike')
-    # logging.info("TomTom initialised")
+    logging.info("Initialising TomTom")
+    walk_tom_tom = TomTom()
+    drive_tom_tom = TomTom(mode='drive')
+    bike_tom_tom = TomTom(mode='bike')
+    logging.info("TomTom initialised")
 
     # pre-load travel cache
     # if not os.path.exists('travel_cache.pkl'):
