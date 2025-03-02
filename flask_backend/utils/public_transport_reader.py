@@ -1,16 +1,59 @@
 # santos will put code here
 import pickle
+import numpy as np
 import requests
 import logging
 import time
+import os
+import pathlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+from sklearn.neighbors import KDTree
 
 def filter_districts_by_distance(workplace_district, workplace_latitude, workplace_longitude, districts, max_travel_time, travel_cache=None):
     """
     Filter districts by travel time from the workplace district.
     If travel_cache is None, calculate distances on-the-fly using multithreading.
     """
-    filtered_districts = {}
+
+    # Create cache directory if it doesn't exist
+    cache_path = pathlib.Path(__file__).parent.resolve() / 'map_cache'
+    os.makedirs(cache_path, exist_ok=True)
+    
+    # Build path for KD tree cache file
+    kd_tree_cache_file = f"{cache_path}/districts_kd_tree.pkl"
+    
+    # Create nodes array for KD tree
+    nodes = np.array([[float(data['latitude']), float(data['longitude'])] for _, data in districts.items()])
+    district_keys = list(districts.keys())
+    
+    # Load or create KD tree
+    kd_tree = None
+    if os.path.exists(kd_tree_cache_file):
+        print("Loading KD tree from cache...")
+        with open(kd_tree_cache_file, 'rb') as f:
+            kd_tree = pickle.load(f)
+        print("Loaded KD tree from cache")
+    else:
+        print("Creating new KD tree...")
+        kd_tree = KDTree(nodes)
+        # Save to cache
+        with open(kd_tree_cache_file, 'wb') as f:
+            pickle.dump(kd_tree, f)
+        print("Saved KD tree to cache")
+
+    # Query the KD tree - ensure we're passing a 2D array
+    query_point = np.array([[workplace_latitude, workplace_longitude]])
+    _, indices = kd_tree.query(query_point, k=150)
+    
+    # Get the nearest districts
+    nearest_district_indices = indices[0]  # Get the first row of indices
+    nearest_districts = [district_keys[i] for i in nearest_district_indices]
+    
+    # Filter the districts dictionary to only include the nearest districts
+    filtered_districts_dict = {k: v for k, v in districts.items() if k in nearest_districts}
+
+    result_districts = {}
     
     # If no cache is provided, use on-the-fly calculation with multithreading
     if travel_cache is None:
@@ -22,7 +65,7 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
         
         # Create a list of districts to calculate (excluding workplace district)
         district_calculations = []
-        for district, data in districts.items():
+        for district, data in filtered_districts_dict.items():
             if district == workplace_district:
                 # For workplace district, calculate from specified workplace coordinates to district center
                 district_calculations.append((workplace_latitude, workplace_longitude, 
@@ -59,6 +102,7 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
                 # Submit job to executor
                 future = executor.submit(get_journey, from_lat, from_lon, to_lat, to_lon)
                 future_to_district[future] = district
+                break
             
             # Process completed futures
             for future in as_completed(future_to_district):
@@ -68,20 +112,20 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
                     logging.info(f"Journey to {district} took {journey_duration} minutes")
                     print(f"    Journey to {district} took {journey_duration} minutes")
                     if journey_duration <= max_travel_time:
-                        filtered_districts[district] = journey_duration
+                        result_districts[district] = journey_duration
                 except Exception as e:
                     logging.error(f"Error calculating journey to {district}: {str(e)}")
         
         print(time.time() - start_time)      
-        return filtered_districts
+        return result_districts
     
     # If cache is provided, use the original approach
-    for (district, data) in districts.items():
+    for (district, data) in filtered_districts_dict.items():
         # workplace district should compute from center of district
         if district == workplace_district:
             journey_duration = get_journey(workplace_latitude, workplace_longitude, data['latitude'], data['longitude'])
             if journey_duration <= max_travel_time:
-                filtered_districts[district] = journey_duration
+                result_districts[district] = journey_duration
             continue
 
         journey_duration = travel_cache.get((workplace_district, district))
@@ -90,10 +134,10 @@ def filter_districts_by_distance(workplace_district, workplace_latitude, workpla
             journey_duration = get_journey(districts[workplace_district]['latitude'], districts[workplace_district]['longitude'], data['latitude'], data['longitude'])
         
         if journey_duration <= max_travel_time:
-            filtered_districts[district] = journey_duration
+            result_districts[district] = journey_duration
 
     
-    return filtered_districts
+    return result_districts
 
 def get_all_distances(districts):
     distances = {}

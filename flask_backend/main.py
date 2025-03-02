@@ -1,3 +1,5 @@
+import numpy as np
+from sklearn.neighbors import KDTree
 from utils import *
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -12,10 +14,12 @@ logger = logging.getLogger(__name__)
 
 global districts
 global travel_cache
+global tom_tom
+global savings_cache
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    try:
+    # try:
         data = request.get_json()
         
         # Extract coordinates from request to district
@@ -35,7 +39,16 @@ def predict():
         
         # filter districts by distance
         max_travel_time = data.get('max_travel_time')
-        filtered_districts = filter_districts_by_distance(workplace_district, districts, max_travel_time)
+        transport_mode = data.get('transport_mode')
+
+        if transport_mode == 'public_transport':
+            filtered_districts = filter_districts_by_distance(workplace_district, workplace_latitude, workplace_longitude, districts, max_travel_time)
+        # elif transport_mode == 'car':
+        #     filtered_districts = drive_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
+        # elif transport_mode == 'bike':
+        #     filtered_districts = bike_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
+        else:
+            raise Exception(f"Invalid transport mode: {transport_mode}")
         
         rent_data = {}
         # Get rent data for each postcode
@@ -71,20 +84,23 @@ def predict():
         predictions = {}
         for district in rent_data:
             logging.info(f"Predicting savings for district: {district}")
-            savings_prediction = predict_savings(district, salary, percent_saving, sector, years)
+            savings_prediction = predict_savings(district, salary, percent_saving, sector, years, predict_cache=savings_cache)
             predictions[district] = savings_prediction
-            break # TODO: remove this, to make it work, done for testing
 
         # get average rent value for each postcode        
         return jsonify({
             'recommendations': rent_data,
-            'savings_predictions': savings_prediction
+            'savings_predictions': predictions
         })
         
-    except Exception as e:
-        return jsonify({
-            'error': str(e)
-        }), 500
+    # except Exception as e:
+    #     # save caches
+    #     pickle.dump(districts, open('districts.pkl', 'wb'))
+    #     # pickle.dump(travel_cache, open('travel_cache.pkl', 'wb'))
+    #     pickle.dump(savings_cache, open('savings_cache.pkl', 'wb'))
+    #     return jsonify({
+    #         'error': str(e)
+    #     }), 500
 
 if __name__ == '__main__':
     # pre-load all districts
@@ -96,6 +112,21 @@ if __name__ == '__main__':
         logging.info("Districts data found, loading from file")
         districts = pickle.load(open('districts.pkl', 'rb'))
     logging.info(f"Loaded {len(districts)} districts")
+
+    # pre-load savings cache
+    if not os.path.exists('savings_cache.pkl'):
+        logging.info("Savings cache not found, initialising")
+        savings_cache = {}
+    else:
+        logging.info("Savings cache found, loading from file")
+        savings_cache = pickle.load(open('savings_cache.pkl', 'rb'))
+    logging.info(f"Loaded {len(savings_cache)} savings cache entries")
+
+    # logging.info("Initialising TomTom")
+    # walk_tom_tom = TomTom()
+    # drive_tom_tom = TomTom(mode='drive')
+    # bike_tom_tom = TomTom(mode='bike')
+    # logging.info("TomTom initialised")
 
     # pre-load travel cache
     # if not os.path.exists('travel_cache.pkl'):
@@ -113,4 +144,11 @@ if __name__ == '__main__':
     #     travel_cache = pickle.load(open('travel_cache.pkl', 'rb'))
     # logging.info(f"Loaded {len(travel_cache)} travel cache entries")
 
-    app.run(debug=True)
+    try:
+        app.run(debug=True)
+    except KeyboardInterrupt:
+        # save caches
+        pickle.dump(districts, open('districts.pkl', 'wb'))
+        # pickle.dump(travel_cache, open('travel_cache.pkl', 'wb'))
+        pickle.dump(savings_cache, open('savings_cache.pkl', 'wb'))
+        logging.info("Caches saved")

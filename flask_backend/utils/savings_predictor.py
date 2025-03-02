@@ -2,6 +2,9 @@ from .bills import *
 from .rent_reader import get_rent_by_district, get_burrough_by_district
 import yfinance as yf
 from sklearn.linear_model import LinearRegression
+import pandas as pd
+from datetime import datetime, timedelta
+
 def predict_savings(district, salary, percent_saving, sector, years, predict_cache=None):
     """
     predict for the next ten years the spending of living in this area:
@@ -24,49 +27,68 @@ def predict_savings(district, salary, percent_saving, sector, years, predict_cac
     if district in predict_cache:
         return predict_cache[district]
 
-    wealth = salary
+    # Get a reasonable annual growth rate for investments
+    annual_investment_rate = get_reasonable_investment_rate()
+    
+    wealth = 0
+    investment_portfolio = 0  # Track investments separately
     predictions = [] # list of ten with a dict of predictions and reason for each year
     for year in range(years):
         reasons = []
-        # Add salary progression
-        new_salary = predict_salary_progression(salary, sector, year)
-        wealth += new_salary
-        reasons.append(f"This year, given you told us you work in the {sector} sector, we predict your salary will increase by {new_salary - salary}")
+        new_salary = salary
+        if year > 0:
+            # Add salary progression
+            new_salary = predict_salary_progression(salary, sector, year)
+            wealth += new_salary
+            reasons.append(f"This year, given you told us you work in the {sector} sector, we predict your salary will increase by {new_salary - salary}")
 
-        # Add savings increase
-        wealth += _predict_savings(new_salary, percent_saving, year)
-        reasons.append(f"This year, the S and P is expected to adjust your wealth by {wealth - salary}")
+        # Calculate this year's savings contribution
+        this_year_savings = new_salary * (percent_saving / 100)
+        
+        # Grow existing investment portfolio
+        if investment_portfolio > 0:
+            old_portfolio = investment_portfolio
+            investment_portfolio *= (1 + annual_investment_rate)
+            portfolio_growth = investment_portfolio - old_portfolio
+            reasons.append(f"This year, your existing investments grew by £{portfolio_growth:.2f} ({annual_investment_rate*100:.1f}% return)")
+        
+        # Add new savings to portfolio
+        investment_portfolio += this_year_savings
+        reasons.append(f"This year, you saved £{this_year_savings:.2f} from your salary")
+        
+        # Update total wealth
+        wealth = investment_portfolio
         
         # Add inflation
         wealth = predict_inflation(wealth, year)
-        reasons.append(f"This year, the inflation is expected to adjust your wealth by {wealth - salary}")
+        reasons.append(f"This year, inflation adjusted your wealth to £{wealth:.2f}")
         
         # TODO: Add rent
         rent = predict_rent(district, year)
         wealth -= rent
-        reasons.append(f"This year, your rent payments in {district} are predicted to be {rent}")
+        reasons.append(f"This year, your rent payments in {district} are predicted to be £{rent:.2f}")
 
         # Add bills
         bills = {
             'gas': {
                 'historical': get_gas_historical_data(),
                 'futures': get_gas_futures_data(),
-                'current_price': 50
+                'current_price': 50 * 12
             },
             'electricity': {
                 'historical': get_electricity_historical_data(),
                 'futures': get_electricity_futures_data(),
-                'current_price': 55
+                'current_price': 55 * 12
             },
             'water': { 
                 'historical': get_water_historical_data(),
                 'futures': get_water_futures_data(),
-                'current_price': 35.25
+                'current_price': 35.25 * 12
             }
         }
         bill_for_year = predict_bills(bills, year)
         for bill in bill_for_year:
-            wealth -= bill_for_year[bill]
+            wealth -= float(bill_for_year[bill])
             reasons.append(f"This year, your {bill} bills are predicted to be {bill_for_year[bill]}")
         
         # # TODO:Add insurance
@@ -83,10 +105,32 @@ def predict_savings(district, salary, percent_saving, sector, years, predict_cac
             'wealth': wealth,
             'reasons': reasons
         })
+    predict_cache[district] = predictions
     return predictions
 
 
-
+def get_reasonable_investment_rate():
+    """
+    Returns a reasonable annual growth rate for investments based on historical S&P 500 data.
+    The long-term average annual return of the S&P 500 is about 10% before inflation,
+    or about 7% after inflation.
+    """
+    # Get historical data for the past 20 years to calculate a reasonable rate
+    try:
+        s_and_p_500 = get_s_and_p_500(20)
+        annual_rate = compute_annual_growth_rate(s_and_p_500, window=252, years=20)
+        
+        # Cap the rate to be within reasonable bounds
+        if annual_rate > 0.10:  # Cap at 10%
+            annual_rate = 0.10
+        elif annual_rate < 0.04:  # Floor at 4%
+            annual_rate = 0.04
+            
+        return annual_rate
+    except Exception as e:
+        # If there's any error, return a reasonable default
+        print(f"Error calculating investment rate: {e}")
+        return 0.07  # 7% is a reasonable long-term average after inflation
 
 
 # |--------------------|
@@ -151,7 +195,7 @@ def _predict_savings(salary, percent_saving, years, window=10):
     Predict the savings after a specified number of years using the moving average
     of the S&P 500 to derive an annual growth rate.
     
-    The model assumes that a lump sum equal to one year’s saved amount 
+    The model assumes that a lump sum equal to one year's saved amount 
     (salary * percent_saving) is invested at the start and grows over the period.
     """
     s_and_p_500 = get_s_and_p_500(years)
@@ -202,8 +246,11 @@ def predict_inflation(wealth, year):
     # Predict the inflation rate.
     prediction = model.predict(future_feature)
     
-    # return the new wealth
-    return wealth * (1 + prediction[0])
+    # Ensure we're working with a scalar value, not a Series or array
+    inflation_rate = float(prediction[0])
+    
+    # return the new wealth as a scalar
+    return float(wealth) * (1 + inflation_rate)
 
 # |--------------------|
 # | RENT               |
@@ -264,7 +311,7 @@ def predict_rent(district, year):
     """
     predict the rent for the next years
     """
-    base_rent = get_rent_by_district(district)
+    base_rent = float(get_rent_by_district(district))
     return base_rent
     crime_rate_penalty = get_crime_rate_penalty(district, year)
     planning_permission_adjustment = get_planning_permission_adjustment(district, year)
