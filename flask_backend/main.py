@@ -41,7 +41,7 @@ def predict():
         max_travel_time = data.get('max_travel_time')
         transport_mode = data.get('transport_mode')
 
-        if transport_mode == 'public_transport':
+        if transport_mode == 'public':
             filtered_districts = filter_districts_by_distance(workplace_district, workplace_latitude, workplace_longitude, districts, max_travel_time)
         elif transport_mode == 'car':
             filtered_districts = drive_tom_tom.filter_districts_within_time(workplace_district, districts, max_travel_time)
@@ -64,9 +64,9 @@ def predict():
             }), 404
             
         # Extract constraints from request
-        min_rent = int(data.get('min_rent'))
-        max_rent = int(data.get('max_rent'))
-
+        rent = int(data.get('rent'))
+        min_rent, max_rent = get_rent_range(rent)
+        logging.info(f"Min rent: {min_rent}, Max rent: {max_rent}")
         # Filter rent data based on constraints
         rent_data = {k: v for k, v in rent_data.items() if min_rent <= v <= max_rent}
         logging.info(f"Filtered rent data: {rent_data}")
@@ -123,9 +123,9 @@ if __name__ == '__main__':
     logging.info(f"Loaded {len(savings_cache)} savings cache entries")
 
     logging.info("Initialising TomTom")
-    walk_tom_tom = TomTom()
-    drive_tom_tom = TomTom(mode='drive')
-    bike_tom_tom = TomTom(mode='bike')
+    walk_tom_tom = TomTom(mock=True)
+    drive_tom_tom = TomTom(mode='drive', mock=True)
+    bike_tom_tom = TomTom(mode='bike', mock=True)
     logging.info("TomTom initialised")
 
     # pre-load travel cache

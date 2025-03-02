@@ -15,7 +15,8 @@ class PathFindingError(Exception):
 class TomTom:
     default_speed = {'drive':30.0, 'walk': 3.4, 'bike': 17.0}
 
-    def __init__(self, place_name="Greater London, UK", mode: Literal['drive', 'walk', 'bike']='walk', speed: Optional[float]=None):
+    def __init__(self, place_name="Greater London, UK", mode: Literal['drive', 'walk', 'bike']='walk', speed: Optional[float]=None, mock = False):
+        if mock: return
         self.speed = self.default_speed[mode] if speed==None else speed
         self.mode = mode
         print(f"Initializing TomTom navigator for {place_name} for {mode} mode at {self.speed}")

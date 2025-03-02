@@ -70,3 +70,23 @@ def get_district_from_coords(lat, lon):
             return response.json()["result"][0]["outcode"]
         else:
             return None
+        
+def get_rent_range(rent):
+    """
+    :rent: int - 1 - Lower, 2 - Median, 3 - Upper
+    """
+    # get rent Upper, Lower and Median
+    district_data, burrough_data = get_rent_data()
+    min_rent = 0
+    max_rent = 10000
+    if rent == 1:
+        max_rent = (district_data['LowerQ'].mean() + burrough_data['LowerQ'].mean()) / 2
+        min_rent = 500
+    elif rent == 2:
+        max_rent = (district_data['Median'].mean() + burrough_data['Median'].mean()) / 2
+        min_rent = 700
+    elif rent == 3:
+        max_rent = (district_data['UpperQ'].mean() + burrough_data['UpperQ'].mean()) / 2
+        min_rent = 1000
+
+    return min_rent, max_rent
